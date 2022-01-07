@@ -1,4 +1,4 @@
-module awesomeProject
+module mydocker
 
 go 1.17
 

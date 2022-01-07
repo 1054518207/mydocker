@@ -2,12 +2,35 @@ package container
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"syscall"
 )
 
-func NewParentProcess(tty bool, command string) *exec.Cmd {
+func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+	readPipe, writePipe, err := NewPipe()
+	if err != nil {
+		logrus.Errorf("New pipe error %v", err)
+		return nil, nil
+	}
+	cmd := exec.Command("/proc/self/exe", "init")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |
+			syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
+	}
+
+	if tty {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	cmd.ExtraFiles = []*os.File{readPipe}
+	return cmd, writePipe
+}
+
+func NewParentProcessOld(tty bool, command string) *exec.Cmd {
 	/*
 		这里是父进程也就是我们当前进程执行的内容，根据我们上一章介绍的内容，应该比较容易明白
 		1.这里的/proc/self/exe 调用，其中/proc/self指的是当前运行进程自己的环境，exe其实就是自己调用了自己，我们使用这种方式实现对创建出来的进程进行初始化
@@ -29,4 +52,12 @@ func NewParentProcess(tty bool, command string) *exec.Cmd {
 	}
 
 	return cmd
+}
+
+func NewPipe() (*os.File, *os.File, error) {
+	read, write, err := os.Pipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	return read, write, nil
 }

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"awesomeProject/container"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"mydocker/cgroups/subsystems"
+	"mydocker/container"
 )
 
 var runCommand = cli.Command{
@@ -16,6 +17,9 @@ var runCommand = cli.Command{
 			Name:  "ti",
 			Usage: "enable tty",
 		},
+		cli.StringFlag{Name: "m", Usage: "memory limit"},
+		cli.StringFlag{Name: "cpushare", Usage: "cpushare limit"},
+		cli.StringFlag{Name: "cpuset", Usage: "cpuset limit"},
 	},
 	/*
 		run命令执行的真正函数
@@ -27,9 +31,17 @@ var runCommand = cli.Command{
 		if len(context.Args()) < 1 {
 			return fmt.Errorf("Missing container command")
 		}
-		cmd := context.Args().Get(0)
+		var cmdArray []string
+		for _, arg := range context.Args() {
+			cmdArray = append(cmdArray, arg)
+		}
 		tty := context.Bool("ti")
-		Run(tty, cmd)
+		resConf := &subsystems.ResourceConfig{
+			MemoryLimit: context.String("m"),
+			CpuShare:    context.String("cpushare"),
+			CpuSet:      context.String("cpuset"),
+		}
+		Run(tty, cmdArray, resConf)
 		return nil
 	},
 }
@@ -45,7 +57,7 @@ var initCommand = cli.Command{
 		logrus.Infof("Init come on")
 		cmd := ctx.Args().Get(0)
 		logrus.Infof("command: %s", cmd)
-		err := container.RunContainerInitProcess(cmd, nil)
+		err := container.RunContainerInitProcess()
 		return err
 	},
 }
