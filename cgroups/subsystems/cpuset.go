@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strconv"
+)
+
+const (
+	cpusetCpus = "cpuset.cpus"
 )
 
 type CpusetSubSystem struct {
 }
 
 func (s *CpusetSubSystem) Set(cgroupPath string, res *ResourceConfig) error {
-	if subsysCgroupPath, err := GetCgroupPat(s.Name(), cgroupPath, true); err == nil {
+	if subsysCgroupPath, err := GetCgroupPath(s.Name(), cgroupPath); err == nil {
 		if res.CpuSet != "" {
-			err := os.WriteFile(path.Join(subsysCgroupPath, "cpuset.cpus"), []byte(res.CpuSet), 0644)
+			err := os.WriteFile(path.Join(subsysCgroupPath, cpusetCpus), []byte(res.CpuSet), 0644)
 			if err != nil {
 				return fmt.Errorf("set cgroup cpuset fail %v", err)
 			}
@@ -25,26 +28,11 @@ func (s *CpusetSubSystem) Set(cgroupPath string, res *ResourceConfig) error {
 }
 
 func (s *CpusetSubSystem) Remove(cgroupPath string) error {
-	subsysCgroupPath, err := GetCgroupPat(s.Name(), cgroupPath, false)
-	if err != nil {
-		return err
-	} else {
-		// 删除 cgroup 便是删除对应的 cgroupPath 目录
-		return os.RemoveAll(subsysCgroupPath)
-	}
+	return remove(s.Name(), cgroupPath)
 }
 
 func (s *CpusetSubSystem) Apply(cgroupPath string, pid int) error {
-	subsysCgroupPath, err := GetCgroupPat(s.Name(), cgroupPath, false)
-	if err != nil {
-		return fmt.Errorf("get cgroup %s error: %v", cgroupPath, err)
-	} else {
-		err := os.WriteFile(path.Join(subsysCgroupPath, "tasks"), []byte(strconv.Itoa(pid)), 0644)
-		if err != nil {
-			return fmt.Errorf("set cgroup proc fail %v", err)
-		}
-		return nil
-	}
+	return apply(s.Name(), cgroupPath, pid)
 }
 
 func (s *CpusetSubSystem) Name() string {
