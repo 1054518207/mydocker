@@ -14,10 +14,20 @@ const (
 	writeLayer   = "writeLayer"
 )
 
-func NewAUFSWorkSpace(rootURL, mntURL string) {
+func NewAUFSWorkSpace(rootURL, mntURL, volume string) {
 	CreateReadonlyLayer(rootURL)
 	CreateWriteLayer(rootURL)
 	CreateMountPoint(rootURL, mntURL)
+	if volume != "" {
+		volumeURLs := volumeUrlExtract(volume)
+		length := len(volumeURLs)
+		if length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "" {
+			MountVolume(rootURL, mntURL, volumeURLs)
+			logrus.Infof("VolumeURLs: %v", volumeURLs)
+		} else {
+			logrus.Warnf("Volume parameter input is invalid.")
+		}
+	}
 }
 
 // CreateReadonlyLayer 将busybox.tar解压到busybox目录下，作为容器的只读层
@@ -75,8 +85,18 @@ func CreateMountPoint(rootURL, mntURL string) {
 	}
 }
 
-func DeleteAUFSWorkSpace(rootURL, mntURL string) {
-	DeleteMountPoint(mntURL)
+func DeleteAUFSWorkSpace(rootURL, mntURL string, volume string) {
+	if volume != "" {
+		volumeURLs := volumeUrlExtract(volume)
+		length := len(volumeURLs)
+		if length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "" {
+			DeleteMountPointWithVolume(rootURL, mntURL, volumeURLs)
+		} else {
+			DeleteMountPoint(mntURL)
+		}
+	} else {
+		DeleteMountPoint(mntURL)
+	}
 	DeleteWriteLayer(rootURL)
 }
 

@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := newPipe()
 	if err != nil {
 		logrus.Errorf("New pipe error %v", err)
@@ -28,7 +28,7 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	cmd.ExtraFiles = []*os.File{readPipe}
 	mntURL := "/root/mnt"
 	rootURL := "/root"
-	NewAUFSWorkSpace(rootURL, mntURL)
+	NewAUFSWorkSpace(rootURL, mntURL, volume)
 	// 配置 rootfs
 	cmd.Dir = mntURL
 	return cmd, writePipe
