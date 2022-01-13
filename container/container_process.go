@@ -26,7 +26,10 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	}
 
 	cmd.ExtraFiles = []*os.File{readPipe}
+	mntURL := "/root/mnt"
+	rootURL := "/root"
+	NewAUFSWorkSpace(rootURL, mntURL)
 	// 配置 rootfs
-	cmd.Dir = "/root/busybox"
+	cmd.Dir = mntURL
 	return cmd, writePipe
 }
