@@ -18,6 +18,7 @@ func main() {
 	app.Commands = []cli.Command{ // 根据参数选择执行函数，例如 mydocker run 执行runCommand，run为函数中 cli 的Name
 		initCommand,
 		runCommand,
+		commitCommand,
 	}
 
 	app.Before = func(ctx *cli.Context) error {
