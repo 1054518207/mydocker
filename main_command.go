@@ -13,14 +13,12 @@ var runCommand = cli.Command{
 	Usage: `Create a container with namespace and cgroups limit
 			mydocker run -ti [command]`,
 	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "ti",
-			Usage: "enable tty",
-		},
+		cli.BoolFlag{Name: "ti", Usage: "enable tty"},
 		cli.StringFlag{Name: "m", Usage: "memory limit"},
 		cli.StringFlag{Name: "cpushare", Usage: "cpushare limit"},
 		cli.StringFlag{Name: "cpuset", Usage: "cpuset limit"},
 		cli.StringFlag{Name: "v", Usage: "volume"},
+		cli.BoolFlag{Name: "d", Usage: "detach container, run as a daemon"},
 	},
 	/*
 		run命令执行的真正函数
@@ -37,12 +35,17 @@ var runCommand = cli.Command{
 			cmdArray = append(cmdArray, arg)
 		}
 		tty := context.Bool("ti")
+		detach := context.Bool("d")
 		volume := context.String("v")
+		if tty && detach {
+			return fmt.Errorf("ti and d parameter can not be both provided")
+		}
 		resConf := &subsystems.ResourceConfig{
 			MemoryLimit: context.String("m"),
 			CpuShare:    context.String("cpushare"),
 			CpuSet:      context.String("cpuset"),
 		}
+		logrus.Infof("create tty %v", tty)
 		Run(tty, cmdArray, resConf, volume)
 		return nil
 	},

@@ -34,13 +34,18 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 	_ = cgroupManager.Apply(parent.Process.Pid)
 	// 对容器设置完限制后，初始化容器
 	sendInitCommand(comArray, writePipe)
-	_ = parent.Wait()
+
 	// 删除 AUFS 挂载
 	defer func() {
 		mntURL := "/root/mnt"
 		rootURL := "/root"
 		container.DeleteAUFSWorkSpace(rootURL, mntURL, volume)
 	}()
+
+	if tty {
+		_ = parent.Wait()
+	}
+
 }
 
 func sendInitCommand(comArray []string, writePipe *os.File) {
