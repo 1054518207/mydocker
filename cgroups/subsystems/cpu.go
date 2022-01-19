@@ -26,8 +26,8 @@ func (s *CpuSubSystem) Set(cgroupPath string, res *ResourceConfig) error {
 	}
 }
 
-func (s *CpuSubSystem) Remove(cgroupPath string) error {
-	return remove(s.Name(), cgroupPath)
+func (s *CpuSubSystem) Remove(cgroupPath string, detach bool) error {
+	return remove(s.Name(), cgroupPath, detach)
 }
 
 func (s *CpuSubSystem) Apply(cgroupPath string, pid int) error {

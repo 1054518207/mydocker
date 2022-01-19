@@ -10,8 +10,7 @@ import (
 
 // 解析 volume 字符串
 func volumeUrlExtract(volume string) []string {
-	var volumeURLs []string
-	volumeURLs = strings.Split(volume, ":")
+	volumeURLs := strings.Split(volume, ":")
 	return volumeURLs
 }
 

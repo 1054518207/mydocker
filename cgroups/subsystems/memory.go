@@ -30,8 +30,8 @@ func (s *MemorySubSystem) Set(cgroupPath string, res *ResourceConfig) error {
 	}
 }
 
-func (s *MemorySubSystem) Remove(cgroupPath string) error {
-	return remove(s.Name(), cgroupPath)
+func (s *MemorySubSystem) Remove(cgroupPath string, detach bool) error {
+	return remove(s.Name(), cgroupPath, detach)
 }
 
 func (s *MemorySubSystem) Apply(cgroupPath string, pid int) error {

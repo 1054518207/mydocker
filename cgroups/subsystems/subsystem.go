@@ -13,7 +13,7 @@ type Subsystem interface {
 	Name() string                               // 返回 subsystem 的名字，例如： cpu memory
 	Set(path string, res *ResourceConfig) error // 设置某个cgroup在此subsystem中的资源限制
 	Apply(path string, pid int) error           // 将进程添加到某个 cgroup 中
-	Remove(path string) error                   // 移除某个 cgroup
+	Remove(path string, detach bool) error      // 移除某个 cgroup
 }
 
 var SubsystemsIns = []Subsystem{

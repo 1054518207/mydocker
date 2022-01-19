@@ -11,7 +11,7 @@ import (
 
 func RunContainerInitProcess() error {
 	cmdArray := readUserCommand()
-	if cmdArray == nil || len(cmdArray) == 0 {
+	if len(cmdArray) == 0 {
 		return fmt.Errorf("run container get user command error, cmdArray is nil")
 	}
 

@@ -1,10 +1,12 @@
 package container
 
 import (
-	"github.com/sirupsen/logrus"
+	"mydocker/util"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/sirupsen/logrus"
 )
 
 func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
@@ -23,6 +25,29 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else { // detach mode
+		tmpLogFile := "/root/tmp.log"
+		var logFile *os.File
+		exist, err := util.FileOrDirExits(tmpLogFile)
+		if err != nil {
+			logrus.Error("Error when find tmpLogFile")
+			return nil, nil
+		}
+		if exist {
+			logFile, err = os.OpenFile(tmpLogFile, syscall.O_WRONLY|syscall.O_APPEND, 0644)
+			if err != nil {
+				logrus.Error("Error when open tmpLogFile")
+				return nil, nil
+			}
+		} else {
+			logFile, err = os.Create(tmpLogFile)
+			if err != nil {
+				logrus.Error("Error when create tmpLogFile")
+				return nil, nil
+			}
+		}
+		cmd.Stdout = logFile
+		cmd.Stderr = logFile
 	}
 
 	cmd.ExtraFiles = []*os.File{readPipe}

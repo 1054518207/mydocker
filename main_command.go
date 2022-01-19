@@ -28,7 +28,7 @@ var runCommand = cli.Command{
 	*/
 	Action: func(context *cli.Context) error {
 		if len(context.Args()) < 1 {
-			return fmt.Errorf("Missing container command")
+			return fmt.Errorf("missing container command")
 		}
 		var cmdArray []string
 		for _, arg := range context.Args() {
@@ -46,7 +46,7 @@ var runCommand = cli.Command{
 			CpuSet:      context.String("cpuset"),
 		}
 		logrus.Infof("create tty %v", tty)
-		Run(tty, cmdArray, resConf, volume)
+		Run(tty, cmdArray, resConf, volume, detach)
 		return nil
 	},
 }
