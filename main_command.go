@@ -91,3 +91,16 @@ var listCommand = cli.Command{
 		return nil
 	},
 }
+
+var logCommand = cli.Command{
+	Name: "log",
+	Usage: "print log info",
+	Action: func (ctx *cli.Context) error  {
+		if len(ctx.Args()) < 1 {
+			return fmt.Errorf("missing container id")
+		}
+		containerId := ctx.Args().Get(0)
+		LogContainer(containerId)
+		return nil
+	},
+}

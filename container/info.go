@@ -28,11 +28,11 @@ var (
 	Exit                = "exit"
 	DefaultInfoLocation = "/var/run/mydocker/%s/"
 	ConfigName          = "config.json"
+	LogFileName         = "container.log"
 )
 
-func RecordContainerInfo(containerPID int, cmdArr []string, containerName string) (string, error) {
-	// generate 10 bits random container ID
-	id := util.RandStringBytes(10)
+func RecordContainerInfo(containerPID int, cmdArr []string, containerName, id string) (string, error) {
+	
 	// current time is container create time
 	createTime := time.Now().Format(util.TIMESTAP)
 	command := strings.Join(cmdArr, " ")

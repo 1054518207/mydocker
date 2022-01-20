@@ -1,27 +1,34 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"mydocker/cgroups"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"mydocker/util"
 	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, detach bool, containerName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume)
+
+	// generate 10 bits random container ID
+	containerId := util.RandStringBytes(10)
+
+	parent, writePipe := container.NewParentProcess(tty, volume, containerId)
 	if parent == nil {
 		logrus.Errorf("new parent process error")
 		return
 	}
+	
 	if err := parent.Start(); err != nil {
 		logrus.Error(err)
 		return
 	}
 
 	// record container info
-	containerId, err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName)
+	_, err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName, containerId)
 	if err != nil{
 		logrus.Errorf("Record container info error %v", err)
 		return
