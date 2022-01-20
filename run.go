@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, detach bool) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, detach bool, containerName string) {
 	parent, writePipe := container.NewParentProcess(tty, volume)
 	if parent == nil {
 		logrus.Errorf("new parent process error")
@@ -19,6 +19,14 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 		logrus.Error(err)
 		return
 	}
+
+	// record container info
+	containerId, err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName)
+	if err != nil{
+		logrus.Errorf("Record container info error %v", err)
+		return
+	}
+
 	// use mydocker-cgroup as cgroup name
 	cgroupManager := cgroups.CgroupManager{Path: "mydocker-cgroup"}
 	defer func(cgroupManager *cgroups.CgroupManager) {
@@ -44,6 +52,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 
 	if tty {
 		_ = parent.Wait()
+		container.DeleteContainerInfo(containerId)
 	}
 
 }

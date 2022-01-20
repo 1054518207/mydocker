@@ -2,11 +2,15 @@ package util
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"math/rand"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
+
+var TIMESTAP = "2006-01-02 15:04:05"
 
 func FileOrDirExits(name string) (bool, error) {
 	// https://studygolang.com/articles/5435
@@ -40,4 +44,14 @@ func KillProcess(pid int) error {
 		}
 	}
 	return nil
+}
+
+func RandStringBytes(n int) string{
+	letterBytes := "1234567890"
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn((len(letterBytes)))]
+	}
+	return string(b)
 }

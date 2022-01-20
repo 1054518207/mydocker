@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
 )
 
 var runCommand = cli.Command{
@@ -19,6 +20,7 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: "cpuset", Usage: "cpuset limit"},
 		cli.StringFlag{Name: "v", Usage: "volume"},
 		cli.BoolFlag{Name: "d", Usage: "detach container, run as a daemon"},
+		cli.StringFlag{Name: "name", Usage: "Container name"},
 	},
 	/*
 		run命令执行的真正函数
@@ -46,7 +48,8 @@ var runCommand = cli.Command{
 			CpuSet:      context.String("cpuset"),
 		}
 		logrus.Infof("create tty %v", tty)
-		Run(tty, cmdArray, resConf, volume, detach)
+		containerName := context.String("name")
+		Run(tty, cmdArray, resConf, volume, detach, containerName)
 		return nil
 	},
 }
@@ -76,6 +79,15 @@ var commitCommand = cli.Command{
 		}
 		imageName := ctx.Args().Get(0)
 		commitContainer(imageName)
+		return nil
+	},
+}
+
+var listCommand = cli.Command{
+	Name: "ps",
+	Usage: "list all registering containers",
+	Action: func (ctx *cli.Context) error {
+		ListContainers()
 		return nil
 	},
 }
