@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -101,6 +102,28 @@ var logCommand = cli.Command{
 		}
 		containerId := ctx.Args().Get(0)
 		LogContainer(containerId)
+		return nil
+	},
+}
+
+var execCommand = cli.Command{
+	Name: "exec",
+	Usage: "exec a command into container",
+	Action: func (ctx *cli.Context) error {
+		// callback
+		if os.Getenv(ENV_EXEC_PID) != "" {
+			logrus.Infof("pid callback pid = %d", os.Getgid())
+			return nil
+		}
+		// command format: mydocker exec 容器Id 命令
+		if len(ctx.Args()) < 2 {
+			return fmt.Errorf("missing container id or command")
+		}
+		containerId := ctx.Args().Get(0)
+		var cmdArr []string
+		cmdArr = append(cmdArr, ctx.Args().Tail()...)
+		// 执行命令
+		ExecContainerCommand(containerId, cmdArr)
 		return nil
 	},
 }

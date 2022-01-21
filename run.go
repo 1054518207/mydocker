@@ -36,13 +36,6 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 
 	// use mydocker-cgroup as cgroup name
 	cgroupManager := cgroups.CgroupManager{Path: "mydocker-cgroup"}
-	defer func(cgroupManager *cgroups.CgroupManager) {
-		// destroy cgroup after exit container
-		err := cgroupManager.Destroy(detach)
-		if err != nil {
-			logrus.Error(err)
-		}
-	}(&cgroupManager)
 	// 设置资源限制
 	_ = cgroupManager.Set(res)
 	// 将容器进程加入到各个subsystem挂载对应的cgroup中
@@ -51,15 +44,16 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 	sendInitCommand(comArray, writePipe)
 
 	// 删除 AUFS 挂载
-	defer func() {
-		mntURL := "/root/mnt"
-		rootURL := "/root"
-		container.DeleteAUFSWorkSpace(rootURL, mntURL, volume)
-	}()
+	// defer func() {
+	// 	mntURL := "/root/mnt"
+	// 	rootURL := "/root"
+	// 	container.DeleteAUFSWorkSpace(rootURL, mntURL, volume)
+	// }()
 
 	if tty {
 		_ = parent.Wait()
 		container.DeleteContainerInfo(containerId)
+		cgroupManager.Destroy(false)
 	}
 
 }
