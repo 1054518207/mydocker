@@ -73,13 +73,13 @@ var initCommand = cli.Command{
 
 var commitCommand = cli.Command{
 	Name:  "commit",
-	Usage: "commit a container into image",
+	Usage: "commit a container into image, eg: ./mydocker commit 9871200000. This will be a tar in /root dir.",
 	Action: func(ctx *cli.Context) error {
 		if len(ctx.Args()) < 1 {
 			return fmt.Errorf("missing container name")
 		}
-		imageName := ctx.Args().Get(0)
-		commitContainer(imageName)
+		containerId := ctx.Args().Get(0)
+		commitContainer(containerId)
 		return nil
 	},
 }
