@@ -20,6 +20,7 @@ type ContainerInfo struct {
 	Command    string `json:"command"`
 	CreateTime string `json:"createTime"`
 	Status     string `json:"status"`
+	Volume     string `json:"volume"`
 }
 
 var (
@@ -29,10 +30,20 @@ var (
 	DefaultInfoLocation = "/var/run/mydocker/%s/"
 	ConfigName          = "config.json"
 	LogFileName         = "container.log"
+
+	// AUFS 配置
+	AUFSRootUrl         = "/var/run/mydocker/%s/"
+	AUFSWriteLayer      = "writerlayer"
+	AUFSMountLayer      = "mnt"
+	BusyBoxUrl			= "/root/busybox"
+	BusyBoxTarUrl       = "/root/busybox.tar"
+
+	// cgroup配置
+	CGroup = "mydocker-cgroup/%s"
 )
 
-func RecordContainerInfo(containerPID int, cmdArr []string, containerName, id string) (string, error) {
-	
+func RecordContainerInfo(containerPID int, cmdArr []string, containerName, id, volume string) (string, error) {
+
 	// current time is container create time
 	createTime := time.Now().Format(util.TIMESTAP)
 	command := strings.Join(cmdArr, " ")
@@ -48,6 +59,7 @@ func RecordContainerInfo(containerPID int, cmdArr []string, containerName, id st
 		Command:    command,
 		CreateTime: createTime,
 		Status:     RUNNING,
+		Volume:     volume,
 	}
 	// 将容器信息对象json序列化为字符串
 	jsonBytes, err := json.Marshal(containerInfo)

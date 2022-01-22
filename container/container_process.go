@@ -59,12 +59,11 @@ func NewParentProcess(tty bool, volume, containerId string) (*exec.Cmd, *os.File
 
 	cmd.ExtraFiles = []*os.File{readPipe}
 
-	mntURL := "/root/mnt"
-	rootURL := "/root"
+	mntURL := AUFSMountLayer
+	rootURL := fmt.Sprintf(AUFSRootUrl, containerId)
+	mntURL = path.Join(rootURL, mntURL)
 	NewAUFSWorkSpace(rootURL, mntURL, volume)
 	// 配置 rootfs
 	cmd.Dir = mntURL
-
-	// cmd.Dir = "/root/busybox"
 	return cmd, writePipe
 }

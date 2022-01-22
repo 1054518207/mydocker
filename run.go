@@ -1,17 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"mydocker/cgroups"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
 	"mydocker/util"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName string) {
 
 	// generate 10 bits random container ID
 	containerId := util.RandStringBytes(10)
@@ -28,14 +30,14 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 	}
 
 	// record container info
-	_, err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName, containerId)
+	_, err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName, containerId, volume)
 	if err != nil{
 		logrus.Errorf("Record container info error %v", err)
 		return
 	}
 
 	// use mydocker-cgroup as cgroup name
-	cgroupManager := cgroups.CgroupManager{Path: "mydocker-cgroup"}
+	cgroupManager := cgroups.CgroupManager{Path: fmt.Sprintf(container.CGroup, containerId)}
 	// 设置资源限制
 	_ = cgroupManager.Set(res)
 	// 将容器进程加入到各个subsystem挂载对应的cgroup中
@@ -45,12 +47,12 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 
 	if tty {
 		_ = parent.Wait()
+		// 删除 AUFS 挂载
+		rootURL := fmt.Sprintf(container.AUFSRootUrl, containerId)
+		mntURL := path.Join(rootURL, container.AUFSMountLayer)
+		container.DeleteAUFSWorkSpace(rootURL, mntURL, volume)
 		container.DeleteContainerInfo(containerId)
 		cgroupManager.Destroy()
-		// 删除 AUFS 挂载
-		mntURL := "/root/mnt"
-		rootURL := "/root"
-		container.DeleteAUFSWorkSpace(rootURL, mntURL, volume)
 	}
 
 }

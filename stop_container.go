@@ -51,11 +51,12 @@ func StopContainer(containerId string) {
 		logrus.Errorf("error write to config file %s error %v", configFile, err)
 	}
 	// 删除 cgroup 部分，如果restart需要重新写入cgroup
-	cgroupManager := cgroups.CgroupManager{Path: "mydocker-cgroup"}
+	cgroupManager := cgroups.CgroupManager{Path: fmt.Sprintf(container.CGroup, containerId)}
 	cgroupManager.Destroy()
 	// 删除 AUFS 挂载
-	mntURL := "/root/mnt"
-	rootURL := "/root"
+	rootURL := fmt.Sprintf(container.AUFSRootUrl, c.Id)
+	mntURL := path.Join(rootURL, container.AUFSMountLayer)
+	volume := c.Volume
 	// 此处先不考虑 volume 部分，后续等多容器操作时补全volume挂载部分
-	container.DeleteAUFSWorkSpace(rootURL, mntURL, "")
+	container.DeleteAUFSWorkSpace(rootURL, mntURL, volume)
 }

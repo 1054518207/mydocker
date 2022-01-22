@@ -18,8 +18,8 @@ func RemoveContainer(containerId string) {
 		logrus.Errorf("can not get container info %s , container is null pointer, error %v", containerId, err)
 		return
 	}
-	if c.Status != container.STOP {
-		logrus.Errorf("can not remove a not stopped container, container ID = %s error %v", containerId, err)
+	if c.Status == container.RUNNING {
+		logrus.Errorf("can not remove a running container, container ID = %s error %v", containerId, err)
 		return
 	}
 	dirUrl := fmt.Sprintf(container.DefaultInfoLocation, containerId)
