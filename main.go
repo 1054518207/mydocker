@@ -23,6 +23,7 @@ func main() {
 		logCommand,
 		execCommand,
 		stopCommand,
+		rmCommand,
 	}
 
 	app.Before = func(ctx *cli.Context) error {
