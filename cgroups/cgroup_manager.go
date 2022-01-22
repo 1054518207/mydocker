@@ -33,9 +33,9 @@ func (c *CgroupManager) Set(res *subsystems.ResourceConfig) error {
 }
 
 // Destroy 释放各个subsystem挂载中的group
-func (c *CgroupManager) Destroy(detach bool) error {
+func (c *CgroupManager) Destroy() error {
 	for _, subSysIns := range subsystems.SubsystemsIns {
-		err := subSysIns.Remove(c.Path, detach)
+		err := subSysIns.Remove(c.Path)
 		if err != nil {
 			logrus.Warnf("remove cgroup fail %v, error path: %v", err, c.Path)
 		}

@@ -81,13 +81,7 @@ func apply(subsystemName string, cgroupPath string, pid int) error {
 	return nil
 }
 
-func remove(subsystemName, cgroupPath string, detach bool) error {
-
-	if detach {
-		logrus.Infof("Detach mode, don't remove cgroup dirs temporally.")
-		return nil
-	}
-
+func remove(subsystemName, cgroupPath string) error {
 	subsystemPath, err := GetCgroupPath(subsystemName, cgroupPath)
 	if err != nil {
 		return err

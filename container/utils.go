@@ -1,10 +1,15 @@
 package container
 
 import (
-	"github.com/sirupsen/logrus"
+	"encoding/json"
+	"fmt"
 	"io"
+	"mydocker/util"
 	"os"
+	"path"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 func newPipe() (*os.File, *os.File, error) {
@@ -24,4 +29,29 @@ func readUserCommand() []string {
 	}
 	msgStr := string(msg)
 	return strings.Split(msgStr, " ")
+}
+
+func GetContainerInfoById (containerId string) (*ContainerInfo, error) {
+	dirUrl := fmt.Sprintf(DefaultInfoLocation, containerId)
+	configFile := path.Join(dirUrl, ConfigName)
+	exists, err := util.FileOrDirExits(configFile)
+	if err != nil {
+		logrus.Errorf("error judge file or dir %s exits error %v", dirUrl, err)
+		return nil, err
+	}
+	if !exists {
+		logrus.Errorf("no config file %s error", configFile)
+		return nil, fmt.Errorf("no config file %s found", configFile)
+	}
+	contentBytes, err := os.ReadFile(configFile)
+	if err != nil {
+		logrus.Errorf("error read config file %s exits error %v", configFile, err)
+		return nil, err
+	}
+	var containerInfo ContainerInfo
+	if err := json.Unmarshal(contentBytes, &containerInfo) ; err != nil {
+		logrus.Errorf("error get unmarshal json config file %s error %v", configFile, err)
+		return nil, err
+	}
+	return &containerInfo, nil
 }

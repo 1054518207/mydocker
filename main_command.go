@@ -50,7 +50,7 @@ var runCommand = cli.Command{
 		}
 		logrus.Infof("create tty %v", tty)
 		containerName := context.String("name")
-		Run(tty, cmdArray, resConf, volume, detach, containerName)
+		Run(tty, cmdArray, resConf, volume, containerName)
 		return nil
 	},
 }
@@ -124,6 +124,19 @@ var execCommand = cli.Command{
 		cmdArr = append(cmdArr, ctx.Args().Tail()...)
 		// 执行命令
 		ExecContainerCommand(containerId, cmdArr)
+		return nil
+	},
+}
+
+var stopCommand = cli.Command{
+	Name: "stop",
+	Usage: "stop a container, eg: ./mydocker stop 容器ID",
+	Action: func (ctx *cli.Context) error {
+		if len(ctx.Args()) < 1 {
+			return fmt.Errorf("missing container id")
+		}
+		containerId := ctx.Args().Get(0)
+		StopContainer(containerId)
 		return nil
 	},
 }
