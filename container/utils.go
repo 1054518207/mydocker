@@ -55,3 +55,15 @@ func GetContainerInfoById (containerId string) (*ContainerInfo, error) {
 	}
 	return &containerInfo, nil
 }
+
+func GetEnvByPid(pid string) []string {
+	// 进程环境变量存放位置为 /proc/[pid]/environ
+	envPath := fmt.Sprintf("/proc/%s/environ", pid)
+	envBytes, err := os.ReadFile(envPath)
+	if err != nil {
+		logrus.Errorf("Read file %s error %v", envPath, err)
+		return nil
+	}
+	envs := strings.Split(string(envBytes), "\u0000")
+	return envs
+}

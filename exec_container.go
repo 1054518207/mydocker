@@ -37,6 +37,10 @@ func ExecContainerCommand(containerId string, cmdArr []string) error{
 	os.Setenv(ENV_EXEC_PID, pid)
 	os.Setenv(ENV_EXEC_CMD, command)
 
+	// 获取容器内环境变量，并赋值到exec命令中
+	containerEnvs := container.GetEnvByPid(pid)
+	cmd.Env = append(os.Environ(), containerEnvs...)
+
 	if err := cmd.Run(); err != nil {
 		logrus.Errorf("Exec containerId = %s error %v", containerId, err)
 		return err

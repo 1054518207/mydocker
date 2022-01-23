@@ -22,6 +22,7 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: "v", Usage: "volume"},
 		cli.BoolFlag{Name: "d", Usage: "detach container, run as a daemon"},
 		cli.StringFlag{Name: "name", Usage: "Container name"},
+		cli.StringSliceFlag{Name: "e", Usage: "set environment"},
 	},
 	/*
 		run命令执行的真正函数
@@ -40,6 +41,7 @@ var runCommand = cli.Command{
 		tty := context.Bool("ti")
 		detach := context.Bool("d")
 		volume := context.String("v")
+		envs := context.StringSlice("e")
 		if tty && detach {
 			return fmt.Errorf("ti and d parameter can not be both provided")
 		}
@@ -50,7 +52,7 @@ var runCommand = cli.Command{
 		}
 		logrus.Infof("create tty %v", tty)
 		containerName := context.String("name")
-		Run(tty, cmdArray, resConf, volume, containerName)
+		Run(tty, cmdArray, resConf, volume, containerName, envs)
 		return nil
 	},
 }
