@@ -2,6 +2,7 @@ package container
 
 import (
 	"fmt"
+	"mydocker/images"
 	"mydocker/util"
 	"os"
 	"os/exec"
@@ -10,10 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewAUFSWorkSpace(rootURL, mntURL, volume string) {
-	CreateReadonlyLayer()
+func NewAUFSWorkSpace(rootURL, mntURL, volume, imageName string) error{
+	if err := CreateReadonlyLayer(imageName); err != nil{
+		return err
+	}
 	CreateWriteLayer(rootURL)
-	CreateMountPoint(rootURL, mntURL)
+	readonlyLayer := path.Join(images.ImagesStoreDir, imageName)
+	CreateMountPoint(rootURL, mntURL, readonlyLayer )
 	if volume != "" {
 		volumeURLs := volumeUrlExtract(volume)
 		length := len(volumeURLs)
@@ -28,6 +32,7 @@ func NewAUFSWorkSpace(rootURL, mntURL, volume string) {
 			logrus.Warnf("Volume parameter input is invalid.")
 		}
 	}
+	return nil
 }
 
 func CreateVolumeMount(source, target string) error {
@@ -47,26 +52,32 @@ func CreateVolumeMount(source, target string) error {
 }
 
 // CreateReadonlyLayer 将busybox.tar解压到busybox目录下，作为容器的只读层
-func CreateReadonlyLayer() {
-	busyBoxURL := BusyBoxUrl
-	busyBoxTarURL := BusyBoxTarUrl
-	exits, err := util.FileOrDirExits(busyBoxURL)
+func CreateReadonlyLayer(imageName string) error{
+	// busyBoxURL := BusyBoxUrl
+	// busyBoxTarURL := BusyBoxTarUrl
+	imageUrl := path.Join(images.ImagesStoreDir, imageName)
+	exits, err := util.FileOrDirExits(imageUrl)
 	if err != nil {
-		logrus.Warnf("Fail to judge whether dir %s exists. %v", busyBoxURL, err)
+		return fmt.Errorf("fail to judge whether dir %s exists. %v", imageUrl, err)
 	}
 	if !exits {
-		err := os.MkdirAll(busyBoxURL, os.ModePerm)
-		if err != nil {
-			logrus.Errorf("Mkdir dir %s error. %v", busyBoxURL, err)
-			return
-		}
+		
+		return fmt.Errorf("image not in %s , please create target image URL %s with readonly leayer manually", images.ImagesStoreDir, imageName)
+
+		// err := os.MkdirAll(busyBoxURL, os.ModePerm)
+		// if err != nil {
+		// 	logrus.Errorf("Mkdir dir %s error. %v", busyBoxURL, err)
+		// 	return
+		// }
+
 		// CombinedOutput runs the command and returns its combined standard output and standard error 立即运行
-		_, err = exec.Command("tar", "-xvf", busyBoxTarURL, "-C", busyBoxURL).CombinedOutput()
-		if err != nil {
-			logrus.Errorf("untar dir %s error. %v", busyBoxTarURL, err)
-			return
-		}
+		// _, err = exec.Command("tar", "-xvf", busyBoxTarURL, "-C", busyBoxURL).CombinedOutput()
+		// if err != nil {
+		// 	logrus.Errorf("untar dir %s error. %v", busyBoxTarURL, err)
+		// 	return
+		// }
 	}
+	return nil
 }
 
 // CreateWriteLayer 创建一个名称为 writeLayer 的目录作为容器的唯一可写层
@@ -79,7 +90,7 @@ func CreateWriteLayer(rootURL string) {
 	}
 }
 
-func CreateMountPoint(rootURL, mntURL string) {
+func CreateMountPoint(rootURL, mntURL, readonlyURL string){
 	// 创建 mnt 目录作为挂载点
 	err := os.MkdirAll(mntURL, os.ModePerm)
 	if err != nil {
@@ -91,7 +102,7 @@ func CreateMountPoint(rootURL, mntURL string) {
 	// dirs 指定的左边起第一个目录是 read-write 权限，后续目录都是 read-only 权限
 	// 由于 aufs 是虚拟文件系统，挂载点设置为 none
 	// https://www.cnblogs.com/sparkdev/p/11237347.html
-	dirs := "dirs=" + path.Join(rootURL, AUFSWriteLayer) + ":" + BusyBoxUrl
+	dirs := "dirs=" + path.Join(rootURL, AUFSWriteLayer) + ":" + readonlyURL
 	cmd := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", mntURL)
 	logrus.Info("mount command : mount", " -t", " aufs", " -o ", dirs, " none ", mntURL)
 	cmd.Stderr = os.Stderr

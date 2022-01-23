@@ -13,12 +13,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName string, envSlice []string) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string, envSlice []string) {
 
 	// generate 10 bits random container ID
 	containerId := util.RandStringBytes(10)
 
-	parent, writePipe := container.NewParentProcess(tty, volume, containerId, envSlice)
+	parent, writePipe := container.NewParentProcess(tty, volume, containerId, imageName, envSlice)
 	if parent == nil {
 		logrus.Errorf("new parent process error")
 		return

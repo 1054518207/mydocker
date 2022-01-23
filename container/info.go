@@ -35,8 +35,6 @@ var (
 	AUFSRootUrl         = "/var/run/mydocker/%s/"
 	AUFSWriteLayer      = "writerlayer"
 	AUFSMountLayer      = "mnt"
-	BusyBoxUrl			= "/root/busybox"
-	BusyBoxTarUrl       = "/root/busybox.tar"
 
 	// cgroup配置
 	CGroup = "mydocker-cgroup/%s"

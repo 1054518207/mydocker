@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"mydocker/images"
+	"mydocker/util"
 	"os"
+	"path"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -38,6 +41,13 @@ var runCommand = cli.Command{
 		for _, arg := range context.Args() {
 			cmdArray = append(cmdArray, arg)
 		}
+		imageName := cmdArray[0]
+		cmdArray = cmdArray[1:]
+		imagePath := path.Join(images.ImagesStoreDir, imageName)
+		exist, _ := util.FileOrDirExits(imagePath)
+		if !exist{
+			return fmt.Errorf("image name %s not found in %s", imageName, images.ImagesStoreDir)
+		}
 		tty := context.Bool("ti")
 		detach := context.Bool("d")
 		volume := context.String("v")
@@ -52,7 +62,7 @@ var runCommand = cli.Command{
 		}
 		logrus.Infof("create tty %v", tty)
 		containerName := context.String("name")
-		Run(tty, cmdArray, resConf, volume, containerName, envs)
+		Run(tty, cmdArray, resConf, volume, containerName, imageName, envs)
 		return nil
 	},
 }

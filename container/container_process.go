@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewParentProcess(tty bool, volume, containerId string, envSlice []string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerId, imagesName string, envSlice []string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := newPipe()
 	if err != nil {
 		logrus.Errorf("New pipe error %v", err)
@@ -62,7 +62,11 @@ func NewParentProcess(tty bool, volume, containerId string, envSlice []string) (
 
 	rootURL := fmt.Sprintf(AUFSRootUrl, containerId)
 	mntURL := path.Join(rootURL, AUFSMountLayer)
-	NewAUFSWorkSpace(rootURL, mntURL, volume)
+	err = NewAUFSWorkSpace(rootURL, mntURL, volume, imagesName)
+	if err != nil {
+		logrus.Error("Error when create new AUFS work space")
+		return nil, nil
+	}
 	// 配置 rootfs
 	cmd.Dir = mntURL
 	return cmd, writePipe
