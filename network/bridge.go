@@ -5,6 +5,7 @@ import (
 	"net"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
@@ -46,6 +47,35 @@ func (b *BridgeNetworkDriver) Delete(network Network) error {
 
 // 连接容器网络端点到网络
 func (b *BridgeNetworkDriver) Connect(network *Network, endpoint *Endpoint) error {
+	bridgeName := network.Name
+	br, err := netlink.LinkByName(bridgeName)
+	if err != nil{
+		return err
+	}
+
+	la := netlink.NewLinkAttrs()
+	la.Name = endpoint.ID[:5]
+	// 通过设置Veth接口的master属性，设置这个Veth的一端挂载到网络对应的Linux Bridge上
+	la.MasterIndex = br.Attrs().Index
+
+	// 创建Veth对象，通过PeerName配置Veth另外一端的接口名
+	// 配置Veth另外一端的名字 cif-{endpoint ID前5位}
+	endpoint.Device = netlink.Veth{
+		LinkAttrs: la,
+		PeerName: "cif-" + endpoint.ID[:5],
+	}
+	// 调用netlink的LinkAdd方法创建出Veth接口
+	// 由于已经指定link的MasterIndex是网络对应的Linux Bridge
+	// 所以Veth的一端就已经挂载到网络对应的Linux Bridge上
+	if err := netlink.LinkAdd(&endpoint.Device); err != nil {
+		return fmt.Errorf("error add endpoint device: %v", err)
+	}
+
+	// 调用netlink的LinkSetUp方法，配置Veth启动
+	// 相当于 ip link set xxx up 命令
+	 if err := netlink.LinkSetUp(&endpoint.Device); err != nil {
+		 return fmt.Errorf("error set endpoint device up: %v", err)
+	 }
 	return nil
 }
 
@@ -101,24 +131,27 @@ func createBridgeInterface(bridgeName string) error{
 	return nil
 }
 
-func setInterfaceIP(bridgeName, ip string) error {
-	iface, err := netlink.LinkByName(bridgeName)
-	if err != nil{
-		return err
+func setInterfaceIP(name, rawIP string) error {
+	retries := 2
+	var iface netlink.Link
+	var err error
+	for i := 0; i < retries; i++ {
+		iface, err = netlink.LinkByName(name)
+		if err == nil {
+			break
+		}
+		logrus.Debugf("error retrieving new bridge netlink link [ %s ]... retrying", name)
+		time.Sleep(2 * time.Second)
 	}
-	ipNet, err := netlink.ParseIPNet(ip)
 	if err != nil {
-		logrus.Errorf("error parse IPNet %s", ip)
+		return fmt.Errorf("Abandoning retrieving the new bridge link from netlink, Run [ ip link ] to troubleshoot the error: %v", err)
+	}
+	ipNet, err := netlink.ParseIPNet(rawIP)
+	if err != nil {
 		return err
 	}
-	addr := netlink.Addr{
-		IPNet: ipNet,
-		Label: "",
-		Flags: 0,
-		Scope: 0,
-	}
-
-	return netlink.AddrAdd(iface, &addr)
+	addr := &netlink.Addr{IPNet: ipNet, Peer: ipNet, Label: "", Flags: 0, Scope: 0, Broadcast: nil}
+	return netlink.AddrAdd(iface, addr)
 }
 
 func setInterfaceUP(interfaceName string) error {

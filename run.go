@@ -5,15 +5,18 @@ import (
 	"mydocker/cgroups"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"mydocker/network"
 	"mydocker/util"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string, envSlice []string) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string, envSlice []string,
+	nw string, portmapping []string) {
 
 	// generate 10 bits random container ID
 	containerId := util.RandStringBytes(10)
@@ -23,7 +26,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 		logrus.Errorf("new parent process error")
 		return
 	}
-	
+
 	if err := parent.Start(); err != nil {
 		logrus.Error(err)
 		return
@@ -31,7 +34,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 
 	// record container info
 	_, err := container.RecordContainerInfo(parent.Process.Pid, comArray, containerName, containerId, volume)
-	if err != nil{
+	if err != nil {
 		logrus.Errorf("Record container info error %v", err)
 		return
 	}
@@ -42,6 +45,23 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 	_ = cgroupManager.Set(res)
 	// 将容器进程加入到各个subsystem挂载对应的cgroup中
 	_ = cgroupManager.Apply(parent.Process.Pid)
+
+	if nw != "" {
+		// config container network
+		network.Init()
+		cinfo := &container.ContainerInfo{
+			Id:          containerId,
+			Pid:         strconv.Itoa(parent.Process.Pid),
+			Name:        containerName,
+			PortMapping: portmapping,
+		}
+
+		if err := network.Connect(nw, cinfo); err != nil {
+			logrus.Errorf("error connet network %v", err)
+			return
+		}
+	}
+
 	// 对容器设置完限制后，初始化容器
 	sendInitCommand(comArray, writePipe)
 

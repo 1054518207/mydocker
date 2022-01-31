@@ -20,3 +20,8 @@ func TestRelease(t *testing.T){
 		t.Logf("OK")
 	}
 }
+
+func TestInit(t *testing.T) {
+	Init()
+	t.Logf("%v", networks["testbridge"])
+}

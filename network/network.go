@@ -7,6 +7,7 @@ import (
 	"mydocker/util"
 	"net"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"text/tabwriter"
@@ -153,23 +154,38 @@ func Connect(networkName string, cinfo *container.ContainerInfo) error {
 		Network:     network,
 		PortMapping: cinfo.PortMapping,
 	}
+	
+	logrus.Infof("network.go, Connet: ID = %s; IP: %s; Network: %s", ep.ID, ep.IpAddress, ep.Network.IpRange)
+	
 	// 调用网络驱动Connet方法挂载和配置网络端点
 	if err = drivers[network.Driver].Connect(network, ep); err != nil {
 		return err
 	}
+
 	// 进入到容器的网络Nampespace配置容器网络设备的IP地址和路由
 	if err = configEndpointIPAddressAndRoute(ep, cinfo); err != nil {
 		return err
 	}
+	
 	// 配置容器到宿主机的端口映射
 	return configPortMapping(ep, cinfo)
 }
-// TODO: need to reset the rule of iptables FORWARD chain to ACCEPT, because docker 1.13+ changed the default iptables forwarding policy to DROP
+
 // https://github.com/xianlubird/mydocker/issues/52
-// https://github.com/moby/moby/pull/28257/files
-// https://github.com/kubernetes/kubernetes/issues/40182
 // 用于 ./mydocker network list 命令查询当前创建的网络
 func Init() error {
+
+	// need to reset the rule of iptables FORWARD chain to ACCEPT, because
+	// docker 1.13+ changed the default iptables forwarding policy to DROP
+	// https://github.com/moby/moby/pull/28257/files
+	// https://github.com/kubernetes/kubernetes/issues/40182
+	// 看下你的环境iptables FORWARD链默认策略是什么，用这个查看iptables-save -t filter; 如果是DROP的话，试下这个iptables -P FORWARD ACCEPT
+	enableForwardCmd := exec.Command("iptables", "-P", "FORWARD", "ACCEPT")
+	if err := enableForwardCmd.Run(); err != nil {
+		return fmt.Errorf("failed to execute cmd %s", enableForwardCmd.Args)
+	}
+
+
 	// 判断网络配置目录是否存在，不存在则创建
 	exist, err := util.FileOrDirExits(defaultNetworkPath)
 	if err != nil {

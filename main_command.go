@@ -66,12 +66,12 @@ var runCommand = cli.Command{
 		}
 		logrus.Infof("create tty %v", tty)
 		containerName := context.String("name")
-		// network := context.String("net")
+		nw := context.String("net")
 
 		envs := context.StringSlice("e")
-		// portmapping := context.StringSlice("p")
+		portmapping := context.StringSlice("p")
 
-		Run(tty, cmdArray, resConf, volume, containerName, imageName, envs)
+		Run(tty, cmdArray, resConf, volume, containerName, imageName, envs, nw, portmapping)
 		return nil
 	},
 }
