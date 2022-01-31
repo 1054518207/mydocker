@@ -14,13 +14,14 @@ import (
 )
 
 type ContainerInfo struct {
-	Pid        string `json:"pid"`
-	Id         string `json:"Id"`
-	Name       string `json:"name"`
-	Command    string `json:"command"`
-	CreateTime string `json:"createTime"`
-	Status     string `json:"status"`
-	Volume     string `json:"volume"`
+	Pid         string   `json:"pid"`
+	Id          string   `json:"Id"`
+	Name        string   `json:"name"`
+	Command     string   `json:"command"`
+	CreateTime  string   `json:"createTime"`
+	Status      string   `json:"status"`
+	Volume      string   `json:"volume"`
+	PortMapping []string `json:"portmapping"`
 }
 
 var (
@@ -32,9 +33,9 @@ var (
 	LogFileName         = "container.log"
 
 	// AUFS 配置
-	AUFSRootUrl         = "/var/run/mydocker/%s/"
-	AUFSWriteLayer      = "writerlayer"
-	AUFSMountLayer      = "mnt"
+	AUFSRootUrl    = "/var/run/mydocker/%s/"
+	AUFSWriteLayer = "writerlayer"
+	AUFSMountLayer = "mnt"
 
 	// cgroup配置
 	CGroup = "mydocker-cgroup/%s"

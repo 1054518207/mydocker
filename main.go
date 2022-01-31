@@ -24,6 +24,7 @@ func main() {
 		execCommand,
 		stopCommand,
 		rmCommand,
+		networkCommand,
 	}
 
 	app.Before = func(ctx *cli.Context) error {

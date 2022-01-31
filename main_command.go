@@ -5,6 +5,7 @@ import (
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
 	"mydocker/images"
+	"mydocker/network"
 	"mydocker/util"
 	"os"
 	"path"
@@ -26,6 +27,8 @@ var runCommand = cli.Command{
 		cli.BoolFlag{Name: "d", Usage: "detach container, run as a daemon"},
 		cli.StringFlag{Name: "name", Usage: "Container name"},
 		cli.StringSliceFlag{Name: "e", Usage: "set environment"},
+		cli.StringFlag{Name: "net", Usage: "container network"},
+		cli.StringSliceFlag{ Name: "p", Usage: "port mapping"},
 	},
 	/*
 		run命令执行的真正函数
@@ -51,7 +54,8 @@ var runCommand = cli.Command{
 		tty := context.Bool("ti")
 		detach := context.Bool("d")
 		volume := context.String("v")
-		envs := context.StringSlice("e")
+
+		
 		if tty && detach {
 			return fmt.Errorf("ti and d parameter can not be both provided")
 		}
@@ -62,6 +66,11 @@ var runCommand = cli.Command{
 		}
 		logrus.Infof("create tty %v", tty)
 		containerName := context.String("name")
+		// network := context.String("net")
+
+		envs := context.StringSlice("e")
+		// portmapping := context.StringSlice("p")
+
 		Run(tty, cmdArray, resConf, volume, containerName, imageName, envs)
 		return nil
 	},
@@ -163,5 +172,58 @@ var rmCommand = cli.Command{
 		containerId := ctx.Args().Get(0)
 		RemoveContainer(containerId)
 		return nil
+	},
+}
+
+var networkCommand = cli.Command{
+	Name: "network",
+	Usage: "container network commands",
+	Subcommands: []cli.Command{
+		{
+			Name: "create",
+			Usage: "create a container network, eg: ./mydocker network create --driver bridge --subnet 192.168.10.1/24 mybridge",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "driver", Usage: "network driver"},
+				cli.StringFlag{Name: "subnet", Usage: "subnet CIDR, eg: 192.168.10.0/24"},
+			},
+			Action: func (ctx *cli.Context) error {
+				if len(ctx.Args()) < 1 {
+					return fmt.Errorf("missing network name")
+				}
+				network.Init()
+				if err := network.CreateNetwork(ctx.String("driver"), ctx.String("subnet"), ctx.Args()[0]); err != nil {
+					return fmt.Errorf("create network error: %+v", err)
+				}
+				return nil
+			},
+		},
+		{
+			Name: "list",
+			Usage: "list container network",
+			Action: func (ctx *cli.Context)  {
+				network.Init()
+				network.ListNetwork()
+			},
+		},
+		{
+			Name: "remove",
+			Usage: "remove container network, eg: mydocker network remove [network name]",
+			Action: func (ctx *cli.Context) error {
+				if len(ctx.Args()) < 1{
+					return fmt.Errorf("missing network name")
+				}else if len(ctx.Args()) > 1 {
+					return fmt.Errorf("network name is one word")
+				}
+				network.Init()
+				// 此部分需要注意，删除网桥时，NAT的POSTROUTING部分还没有删除，如果需要删除需要手动
+				// iptables -t nat -vnL POSTROUTING --line-numbers   此命令查看 POSTROUTING 部分，num表示行号
+				// iptables -t nat -D POSTROUTING {行号} 删除指定行号POSTROUTING
+				err := network.DeleteNetwork(ctx.Args()[0])
+				if err != nil{
+					return fmt.Errorf("remove network error: %+v", err)
+				}
+				return nil
+			},
+		},
 	},
 }
